@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Paws & Play">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <title>Paws & Play — 3D Pet Daycare 🐶🐱🐰</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #faedcd;
+      font-family: 'Fredoka', 'Quicksand', 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Loading Screen */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #fff1e6 0%, #eddcd2 60%, #ddbea9 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #6b4e3d;
+      z-index: 1000;
+      text-align: center;
+      padding: 24px;
+    }
+    .paw-spinner {
+      font-size: 76px;
+      animation: bounce-paw 1.2s ease-in-out infinite alternate;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 8px 16px rgba(107, 78, 61, 0.25));
+    }
+    @keyframes bounce-paw {
+      0% { transform: translateY(0) scale(1) rotate(-6deg); }
+      100% { transform: translateY(-24px) scale(1.18) rotate(8deg); }
+    }
+    #loading-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      color: #b05e27;
+      text-shadow: 2px 2px 0 #fff;
+    }
+    #loading-text {
+      font-size: 19px;
+      color: #7f5539;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 28px;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    /* Start / Welcome Splash Modal */
+    #welcome-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 29, 21, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 900;
+      padding: 20px;
+    }
+    .welcome-card {
+      background: #fffdfa;
+      border: 4px solid #f6bd60;
+      border-radius: 28px;
+      max-width: 540px;
+      width: 100%;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .welcome-badge {
+      font-size: 54px;
+      margin-bottom: 8px;
+    }
+    .welcome-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: #723c12;
+      margin-bottom: 10px;
+    }
+    .welcome-desc {
+      font-size: 16px;
+      color: #6c584c;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .welcome-features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .welcome-feature-item {
+      background: #fdf0d5;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      color: #664e38;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .start-btn {
+      background: linear-gradient(135deg, #f28482 0%, #f6bd60 100%);
+      color: #fff;
+      border: none;
+      font-size: 22px;
+      font-weight: 800;
+      padding: 16px 36px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(242, 132, 130, 0.45);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .start-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 14px 28px rgba(242, 132, 130, 0.55);
+    }
+    .start-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* HUD Top Bar */
+    #hud-top {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 100;
+      gap: 12px;
+    }
+    .hud-chip {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid #f6bd60;
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #6c584c;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hud-coins {
+      color: #b05e27;
+    }
+    .hud-shift {
+      color: #2b9348;
+    }
+    .hud-reputation {
+      color: #e76f51;
+    }
+
+    /* Active Pets Drawer */
+    #pets-drawer {
+      position: fixed;
+      top: 76px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 280px;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .pet-card {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.93);
+      border: 2px solid #f7c59f;
+      border-radius: 18px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pet-card:hover {
+      transform: translateX(4px);
+      border-color: #f28482;
+    }
+    .pet-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pet-card-name {
+      font-weight: 800;
+      font-size: 15px;
+      color: #723c12;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pet-card-species {
+      font-size: 12px;
+      color: #a98467;
+      font-weight: 600;
+    }
+    .pet-meter-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .pet-meter-bar {
+      flex: 1;
+      height: 7px;
+      background: #eddcd2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .pet-meter-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .fill-hunger { background: #f4a261; }
+    .fill-clean { background: #48cae4; }
+    .fill-play { background: #52b788; }
+    .fill-energy { background: #b5838d; }
+
+    /* Reception Alert Banner */
+    #reception-alert {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #f28482 0%, #f6bd60 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 10px 24px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(242, 132, 130, 0.45);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      z-index: 150;
+      animation: alertPulse 1.2s infinite alternate;
+    }
+    @keyframes alertPulse {
+      0% { transform: translateX(-50%) scale(1); }
+      100% { transform: translateX(-50%) scale(1.05); }
+    }
+
+    /* Bottom Hotbar */
+    #hotbar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 10px 14px;
+      border-radius: 26px;
+      border: 3px solid #f6bd60;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    .hotbar-slot {
+      width: 58px;
+      height: 58px;
+      background: #fdf0d5;
+      border: 2px solid transparent;
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+    }
+    .hotbar-slot:hover {
+      transform: translateY(-4px);
+      background: #fff;
+    }
+    .hotbar-slot.active {
+      border-color: #e76f51;
+      background: #ffe5d9;
+      transform: translateY(-6px) scale(1.08);
+      box-shadow: 0 8px 16px rgba(231, 111, 81, 0.35);
+    }
+    .slot-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+    .slot-num {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #9c6644;
+    }
+    .slot-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #7f5539;
+      margin-top: 2px;
+    }
+    .slot-badge {
+      position: absolute;
+      top: 3px;
+      right: 5px;
+      background: #52b788;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 999px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+    .slot-badge.empty {
+      background: #e63946;
+      animation: pulseEmpty 1s infinite alternate;
+    }
+    @keyframes pulseEmpty {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.18); }
+    }
+    .hotbar-slot.empty-supply {
+      border-color: #e63946 !important;
+      background: #ffe5d9;
+    }
+
+    /* Cabin Restock Modal */
+    #cabin-modal .modal-box {
+      border-color: #8b5a2b;
+      background: #fffdf8;
+      max-width: 520px;
+    }
+    .cabin-supplies-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 18px 0;
+    }
+    .cabin-supply-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fdf0d5;
+      padding: 10px 16px;
+      border-radius: 14px;
+      border: 2px solid #eddcd2;
+    }
+    .cabin-supply-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cabin-supply-icon {
+      font-size: 28px;
+    }
+    .cabin-supply-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #723c12;
+    }
+    .cabin-supply-count {
+      font-size: 14px;
+      font-weight: 800;
+      color: #2a9d8f;
+      background: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .cabin-supply-count.empty {
+      color: #e63946;
+      background: #ffe5d9;
+    }
+
+    /* Action Buttons (Right Side) */
+    #quick-actions {
+      position: fixed;
+      right: 18px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 100;
+    }
+    .action-circle-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #f6bd60;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 26px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      transition: all 0.2s ease;
+    }
+    .action-circle-btn:hover {
+      transform: scale(1.1);
+      border-color: #f28482;
+    }
+    .action-circle-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Interaction Prompt */
+    #interact-prompt {
+      position: fixed;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(30, 20, 15, 0.85);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: 2px solid #f6bd60;
+      pointer-events: none;
+      z-index: 120;
+      display: none;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+      animation: bouncePrompt 1.4s ease-in-out infinite;
+    }
+    @keyframes bouncePrompt {
+      0%, 100% { transform: translate(-50%, -50%); }
+      50% { transform: translate(-50%, -58%); }
+    }
+
+    /* Modals (Shop, Customer Dialogue, Shift Summary, Help) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 29, 21, 0.6);
+      backdrop-filter: blur(6px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 800;
+      padding: 20px;
+    }
+    .modal-box {
+      background: #fffdfa;
+      border: 4px solid #f6bd60;
+      border-radius: 28px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: #eddcd2;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #7f5539;
+    }
+    .modal-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #723c12;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Upgrades Store Cards */
+    .store-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .store-item {
+      background: #fdf0d5;
+      border: 2px solid #eddcd2;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .store-item:hover {
+      border-color: #f6bd60;
+      background: #fff;
+    }
+    .store-item-top {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .store-item-icon {
+      font-size: 32px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 14px;
+      border: 2px solid #eddcd2;
+    }
+    .store-item-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: #723c12;
+    }
+    .store-item-desc {
+      font-size: 13px;
+      color: #7f5539;
+      line-height: 1.35;
+    }
+    .store-buy-btn {
+      background: #52b788;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(82, 183, 136, 0.35);
+      align-self: flex-end;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .store-buy-btn.bought {
+      background: #b7b7a4;
+      cursor: default;
+    }
+
+    /* Owner Dialogue Card */
+    #dialogue-modal .modal-box {
+      border-color: #f28482;
+    }
+    .dialogue-avatar {
+      font-size: 50px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .dialogue-speech {
+      background: #fdf0d5;
+      border-radius: 18px;
+      padding: 16px 20px;
+      font-size: 17px;
+      color: #6c584c;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      border-left: 6px solid #f28482;
+    }
+    .dialogue-pet-preview {
+      background: #fff;
+      border: 2px dashed #f6bd60;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .dialogue-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn-primary {
+      background: #f28482;
+      color: #fff;
+      border: none;
+      font-size: 17px;
+      font-weight: 800;
+      padding: 12px 26px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(242, 132, 130, 0.4);
+    }
+    .btn-secondary {
+      background: #eddcd2;
+      color: #7f5539;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    /* Modal Close Button - 44px tap target */
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: #eddcd2;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #7f5539;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* iPad & Mobile Virtual Joystick */
+    .touch-joystick {
+      position: fixed;
+      bottom: 28px;
+      left: 28px;
+      width: 136px;
+      height: 136px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 3px solid rgba(246, 189, 96, 0.85);
+      border-radius: 50%;
+      display: none;
+      z-index: 120;
+      touch-action: none;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .touch-stick-knob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #f6bd60 0%, #f28482 100%);
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(242, 132, 130, 0.5);
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    /* iPad & Mobile Floating Action Button */
+    .touch-action-btn {
+      position: fixed;
+      right: 92px;
+      bottom: 26px;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f28482 0%, #f6bd60 100%);
+      border: 3px solid #ffffff;
+      color: #fff;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(242, 132, 130, 0.55);
+      cursor: pointer;
+      z-index: 120;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s ease;
+    }
+    .touch-action-btn:active {
+      transform: scale(0.90);
+    }
+    .touch-action-icon {
+      font-size: 30px;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .touch-action-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      pointer-events: none;
+    }
+
+    /* Automatic display on touchscreens / iPads */
+    @media (pointer: coarse), (hover: none) {
+      .touch-joystick { display: block !important; }
+      .touch-action-btn { display: flex !important; }
+    }
+
+    /* iPad Portrait & Narrow Tablets (max-width: 920px) */
+    @media (max-width: 920px) {
+      #hud-top {
+        gap: 6px;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+      }
+      .hud-chip {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      #pets-drawer {
+        top: 64px;
+        max-width: 220px;
+        gap: 6px;
+      }
+      .pet-card {
+        padding: 8px 10px;
+      }
+      #hotbar {
+        bottom: 12px;
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      .hotbar-slot {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+      }
+      .slot-icon {
+        font-size: 22px;
+      }
+      .touch-joystick {
+        bottom: 18px;
+        left: 18px;
+        width: 120px;
+        height: 120px;
+      }
+      .touch-stick-knob {
+        width: 52px;
+        height: 52px;
+      }
+      .touch-action-btn {
+        right: 84px;
+        bottom: 20px;
+        width: 68px;
+        height: 68px;
+      }
+      #quick-actions {
+        right: 12px;
+        bottom: 16px;
+        gap: 10px;
+      }
+      .action-circle-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="paw-spinner">🐾🐶🐱🐰</div>
+    <div id="loading-title">PAWS & PLAY DAYCARE</div>
+    <div id="loading-text">Preparing cozy beds & warm milk... 🍼✨</div>
+  </div>
+
+  <!-- Welcome / Unlock Audio Screen -->
+  <div id="welcome-screen">
+    <div class="welcome-card">
+      <div class="welcome-badge">🏡🐾✨</div>
+      <h1 class="welcome-title">Welcome to Paws & Play!</h1>
+      <p class="welcome-desc">Step into your dream 3D Animal Daycare! Pet owners will arrive with adorable puppies, kittens, and bunnies. Take wonderful care of them to earn 5-star reviews and expand your pet paradise!</p>
+      <div class="welcome-features">
+        <div class="welcome-feature-item">🍖 Feed gourmet kibble & treats</div>
+        <div class="welcome-feature-item">🧼 Bubble spa & warm grooming baths</div>
+        <div class="welcome-feature-item">🎾 Backyard tennis ball fetch</div>
+        <div class="welcome-feature-item">💤 Snuggle on plush pet beds</div>
+      </div>
+      <button class="start-btn" id="start-daycare-btn">
+        <span>OPEN DAYCARE! 🐾</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- HUD Top Bar -->
+  <div id="hud-top">
+    <div class="hud-chip hud-shift">
+      <span>⏰</span>
+      <span id="hud-clock">Day 1 • 09:00 AM</span>
+    </div>
+    <div class="hud-chip hud-coins">
+      <span>🪙</span>
+      <span id="hud-coins-val">120 Coins</span>
+    </div>
+    <div class="hud-chip hud-reputation">
+      <span>⭐</span>
+      <span id="hud-rep-val">5.0 (New Daycare)</span>
+    </div>
+    <div class="hud-chip">
+      <span>🐾</span>
+      <span id="hud-pet-count">0 / 3 Pets</span>
+    </div>
+  </div>
+
+  <!-- Reception Alert -->
+  <div id="reception-alert">
+    <span>🛎️</span>
+    <span id="reception-alert-msg">New Customer at Reception! Click to Visit</span>
+  </div>
+
+  <!-- Active Pets Status Drawer -->
+  <div id="pets-drawer"></div>
+
+  <!-- Interaction Prompt -->
+  <div id="interact-prompt">Press E or Tap to Interact</div>
+
+  <!-- Hotbar -->
+  <div id="hotbar">
+    <div class="hotbar-slot active" data-tool="HANDS" title="Hands (Pet / Snuggle / Pick Up)">
+      <span class="slot-num">1</span>
+      <span class="slot-icon">✋</span>
+      <span class="slot-label">Hands</span>
+    </div>
+    <div class="hotbar-slot" data-tool="FOOD" title="Kibble Bowl (Feed Delicious Meals)">
+      <span class="slot-num">2</span>
+      <span class="slot-icon">🍖</span>
+      <span class="slot-label">Food</span>
+      <span class="slot-badge" data-badge="FOOD">5/5</span>
+    </div>
+    <div class="hotbar-slot" data-tool="WATER" title="Water Pitcher (Refill Fresh Water)">
+      <span class="slot-num">3</span>
+      <span class="slot-icon">💧</span>
+      <span class="slot-label">Water</span>
+      <span class="slot-badge" data-badge="WATER">5/5</span>
+    </div>
+    <div class="hotbar-slot" data-tool="GROOM" title="Bubble Sponge (Spa Bath & Brush)">
+      <span class="slot-num">4</span>
+      <span class="slot-icon">🧼</span>
+      <span class="slot-label">Bath</span>
+      <span class="slot-badge" data-badge="GROOM">5/5</span>
+    </div>
+    <div class="hotbar-slot" data-tool="BALL" title="Tennis Ball (Fetch in Yard)">
+      <span class="slot-num">5</span>
+      <span class="slot-icon">🎾</span>
+      <span class="slot-label">Ball</span>
+      <span class="slot-badge" data-badge="BALL">3/3</span>
+    </div>
+    <div class="hotbar-slot" data-tool="FEATHER" title="Feather Wand (Play with Kittens)">
+      <span class="slot-num">6</span>
+      <span class="slot-icon">🪶</span>
+      <span class="slot-label">Feather</span>
+      <span class="slot-badge" data-badge="FEATHER">5/5</span>
+    </div>
+  </div>
+
+  <!-- Quick Action Buttons (Right) -->
+  <div id="quick-actions">
+    <button class="action-circle-btn" id="btn-reception" title="Go to Reception Counter">🛎️</button>
+    <button class="action-circle-btn" id="btn-cabin" title="Visit Supply Cabin in Backyard">🪵</button>
+    <button class="action-circle-btn" id="btn-store" title="Open Upgrades Shop">🏪</button>
+    <button class="action-circle-btn" id="btn-camera" title="Toggle Camera Perspective">📷</button>
+    <button class="action-circle-btn" id="btn-help" title="Care Guide & Controls">📖</button>
+  </div>
+
+  <!-- iPad / Tablet Virtual Joystick -->
+  <div id="touch-joystick" class="touch-joystick">
+    <div id="touch-stick-knob" class="touch-stick-knob">
+      <span style="font-size: 24px; pointer-events: none;">🐾</span>
+    </div>
+  </div>
+
+  <!-- iPad / Tablet Touch Action Button -->
+  <button id="touch-action-btn" class="touch-action-btn" title="Interact / Use Tool">
+    <span class="touch-action-icon">🐾</span>
+    <span class="touch-action-label">ACTION</span>
+  </button>
+
+  <!-- Owner Dialogue Modal -->
+  <div class="modal-backdrop" id="dialogue-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="dialogue-close-btn">&times;</button>
+      <div class="dialogue-avatar" id="dialogue-avatar">🧑‍🦰</div>
+      <h2 class="modal-title" id="dialogue-owner-name">Sarah & Bella</h2>
+      <div class="dialogue-speech" id="dialogue-speech">"Hello! Could you look after my sweet Golden Retriever Bella today? She loves playing ball in the yard and getting belly rubs!"</div>
+      <div class="dialogue-pet-preview" id="dialogue-pet-preview">
+        <div style="font-size: 40px;" id="dialogue-pet-icon">🐶</div>
+        <div>
+          <h4 id="dialogue-pet-name" style="color: #723c12; font-size: 17px;">Bella (Golden Retriever)</h4>
+          <p id="dialogue-pet-details" style="font-size: 13px; color: #7f5539;">Likes: Tennis Balls • Appetite: Hungry</p>
+        </div>
+      </div>
+      <div class="dialogue-actions">
+        <button class="btn-secondary" id="dialogue-decline-btn">Not Right Now</button>
+        <button class="btn-primary" id="dialogue-accept-btn">Accept Pet! 🐾</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supply Cabin Modal (Paws & Pantry) -->
+  <div class="modal-backdrop" id="cabin-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="cabin-close-btn">&times;</button>
+      <div style="font-size: 52px; text-align: center; margin-bottom: 6px;">🪵🛖🧺</div>
+      <h2 class="modal-title" style="justify-content: center;">Paws & Pantry — Supply Cabin</h2>
+      <p style="text-align: center; color: #7f5539; font-size: 14px; margin-bottom: 16px;">
+        Replenish fresh supplies for your daycare pets! Take what you need anytime for free.
+      </p>
+
+      <div class="cabin-supplies-list" id="cabin-supplies-list">
+        <!-- Live supply status rows rendered dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: center; margin: 20px 0 10px 0;">
+        <button class="btn-primary" id="cabin-restock-btn" style="background: #52b788; box-shadow: 0 6px 18px rgba(82, 183, 136, 0.45); font-size: 17px; padding: 14px 28px;">
+          🧺 RESTOCK ALL SUPPLIES (FREE!) ✨
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upgrades Store Modal -->
+  <div class="modal-backdrop" id="store-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="store-close-btn">&times;</button>
+      <h2 class="modal-title">🏪 Daycare Upgrades & Expansion</h2>
+      <p style="color: #7f5539; font-size: 14px;">Invest your hard-earned coins to unlock luxury facilities and pamper your pets!</p>
+      <div class="store-grid" id="store-grid"></div>
+    </div>
+  </div>
+
+  <!-- Help & Care Guide Modal -->
+  <div class="modal-backdrop" id="help-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="help-close-btn">&times;</button>
+      <h2 class="modal-title">📖 Daycare Caretaker's Handbook</h2>
+      <div style="color: #6c584c; font-size: 15px; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
+        <p><strong>🎯 Controls:</strong> Move with <strong>W, A, S, D</strong> or <strong>Arrow Keys</strong> (or virtual joystick on iPad). Use <strong>Mouse</strong> to look around. Press <strong>E</strong>, <strong>Space</strong>, or tap <strong>🐾 ACTION</strong> to interact.</p>
+        <p><strong>🪵 Supply Cabin Restock:</strong> Visit the cozy timber log cabin in the backyard (or click <strong>🪵</strong>) and press <strong>E</strong> to replenish all your kibble bowls, fresh water jugs, bath sponges, tennis balls, and feather wands for free!</p>
+        <p><strong>🤲 Pick Up & Carry:</strong> With Hands equipped (key 1), approach any pet and press <strong>E</strong> or tap to pick them up into your arms! Carry them around, or walk to the bathtub, pet beds, or cat tree and press <strong>E</strong> to place them in!</p>
+        <p><strong>🍖 Feeding:</strong> Select the Kibble Bowl (key 2) and click a pet or the kitchen feeding bowls to refill and feed hungry pets. You can even feed pets in your arms!</p>
+        <p><strong>🧼 Bathing:</strong> Carry a dirty pet to the Grooming Bathtub or select Bath Sponge (key 4) to give them a warm, bubbly spa wash!</p>
+        <p><strong>🎾 Yard Fun:</strong> Equip the Tennis Ball (key 5) and toss it in the outdoor yard. Watch playful puppies dash and fetch it!</p>
+        <p><strong>💤 Cozy Naps:</strong> Pick up and tuck sleepy pets into the plush donut pet beds to dream sweet dreams.</p>
+        <p><strong>⭐ 5-Star Reviews:</strong> When owners return, happy, fed, and groomed pets grant maximum tips and 5-star ratings!</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
